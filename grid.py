@@ -62,6 +62,21 @@ class Grid:
             self.end = None
         node.state = "empty"
 
+    def get_line_nodes(self, start_node, end_node):
+        r0, c0 = start_node.row, start_node.col
+        r1, c1 = end_node.row, end_node.col
+        steps = max(abs(r1 - r0), abs(c1 - c0))
+        if steps == 0:
+            return [end_node]
+
+        nodes = []
+        for i in range(steps + 1):
+            t = i / steps
+            row = round(r0 + (r1 - r0) * t)
+            col = round(c0 + (c1 - c0) * t)
+            nodes.append(self.nodes[row][col])
+        return nodes
+
     def get_neighbors(self, node):
         neighbors = []
         deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]

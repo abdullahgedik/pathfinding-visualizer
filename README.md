@@ -24,6 +24,6 @@ venv\Scripts\python main.py
 - [x] Path reconstruction/highlighting
 - [x] Dijkstra
 - [x] A*
-- [ ] Speed control
+- [x] Speed control
 - [ ] Maze generation
 - [ ] Weighted terrain
