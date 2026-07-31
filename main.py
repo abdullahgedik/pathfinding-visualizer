@@ -2,12 +2,12 @@ import ctypes
 import pygame
 import pygame_gui
 from grid import Grid
-from bfs import bfs
-from dijkstra import dijkstra
-from astar import astar
-from greedy import greedy
-from dfs import dfs
-from maze import generate_maze
+from algorithms.bfs import bfs
+from algorithms.dijkstra import dijkstra
+from algorithms.astar import astar
+from algorithms.greedy import greedy
+from algorithms.dfs import dfs
+from algorithms.maze import generate_maze
 
 SAVE_FILE = "saved_layout.json"
 

@@ -1,6 +1,6 @@
 import heapq
 from itertools import count
-from astar import heuristic
+from algorithms.astar import heuristic
 
 
 def greedy(grid):

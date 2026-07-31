@@ -1,5 +1,5 @@
 from grid import Grid
-from maze import generate_maze
+from algorithms.maze import generate_maze
 
 
 def run_to_completion(generator):

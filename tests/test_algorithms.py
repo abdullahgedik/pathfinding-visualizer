@@ -1,10 +1,10 @@
 import pytest
 from grid import Grid
-from bfs import bfs
-from dijkstra import dijkstra
-from astar import astar
-from greedy import greedy
-from dfs import dfs
+from algorithms.bfs import bfs
+from algorithms.dijkstra import dijkstra
+from algorithms.astar import astar
+from algorithms.greedy import greedy
+from algorithms.dfs import dfs
 
 ALGORITHMS = [bfs, dijkstra, astar, greedy, dfs]
 
