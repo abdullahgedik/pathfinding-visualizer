@@ -22,8 +22,8 @@ venv\Scripts\python main.py
 - [x] Mouse input (walls, start/end)
 - [x] BFS with step-by-step visualization
 - [x] Path reconstruction/highlighting
-- [ ] Dijkstra
-- [ ] A*
+- [x] Dijkstra
+- [x] A*
 - [ ] Speed control
 - [ ] Maze generation
 - [ ] Weighted terrain

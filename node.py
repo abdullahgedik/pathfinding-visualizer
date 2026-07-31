@@ -11,6 +11,7 @@ class Node:
         self.state = "empty"
         self.visited = False
         self.came_from = None
+        self.distance = float("inf")
 
     def draw(self, window):
         colors = {

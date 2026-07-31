@@ -79,3 +79,17 @@ class Grid:
         while current is not None and current is not self.start:
             current.state = "path"
             current = current.came_from
+
+    def clear(self):
+        self.nodes = self.make_nodes()
+        self.start = None
+        self.end = None
+
+    def reset(self):
+        for row in self.nodes:
+            for node in row:
+                node.visited = False
+                node.came_from = None
+                node.distance = float("inf")
+                if node.state == "path":
+                    node.state = "empty"
