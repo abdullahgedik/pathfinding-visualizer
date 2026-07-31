@@ -1,6 +1,8 @@
 from node import Node
 import pygame
 
+WEIGHT_COST = 5
+
 
 class Grid:
     def __init__(self, row, cols, cell_size):
@@ -10,6 +12,7 @@ class Grid:
         self.nodes = self.make_nodes()
         self.start = None
         self.end = None
+        self.diagonal_enabled = False
 
     def make_nodes(self):
         nodes = []
@@ -45,7 +48,7 @@ class Grid:
         col = max(0, min(col, self.cols - 1))
         return self.nodes[row][col]
 
-    def handle_left_click(self, node):
+    def handle_left_click(self, node, paint_mode="wall"):
         if self.start is None and node is not self.end:
             self.start = node
             node.state = "start"
@@ -53,7 +56,11 @@ class Grid:
             self.end = node
             node.state = "end"
         elif node is not self.start and node is not self.end:
-            node.state = "wall"
+            if paint_mode == "weight":
+                node.state = "weight"
+                node.weight = WEIGHT_COST
+            else:
+                node.state = "wall"
 
     def handle_right_click(self, node):
         if node is self.start:
@@ -61,6 +68,7 @@ class Grid:
         elif node is self.end:
             self.end = None
         node.state = "empty"
+        node.weight = 1
 
     def get_line_nodes(self, start_node, end_node):
         r0, c0 = start_node.row, start_node.col
@@ -80,6 +88,8 @@ class Grid:
     def get_neighbors(self, node):
         neighbors = []
         deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        if self.diagonal_enabled:
+            deltas += [(-1, -1), (-1, 1), (1, -1), (1, 1)]
         for d_row, d_col in deltas:
             new_row = node.row + d_row
             new_col = node.col + d_col
@@ -89,10 +99,25 @@ class Grid:
                     neighbors.append(neighbor)
         return neighbors
 
+    def get_maze_neighbors(self, node):
+        neighbors = []
+        deltas = [(-2, 0), (2, 0), (0, -2), (0, 2)]
+        for d_row, d_col in deltas:
+            new_row = node.row + d_row
+            new_col = node.col + d_col
+            if 0 <= new_row < self.rows and 0 <= new_col < self.cols:
+                neighbor = self.nodes[new_row][new_col]
+                if not neighbor.visited:
+                    wall_row = node.row + d_row // 2
+                    wall_col = node.col + d_col // 2
+                    wall_node = self.nodes[wall_row][wall_col]
+                    neighbors.append((neighbor, wall_node))
+        return neighbors
+
     def reconstruct_path(self, end):
         current = end.came_from
         while current is not None and current is not self.start:
-            current.state = "path"
+            current.on_path = True
             current = current.came_from
 
     def clear(self):
@@ -106,5 +131,4 @@ class Grid:
                 node.visited = False
                 node.came_from = None
                 node.distance = float("inf")
-                if node.state == "path":
-                    node.state = "empty"
+                node.on_path = False

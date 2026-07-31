@@ -20,7 +20,7 @@ def dijkstra(grid):
             return
 
         for neighbor in grid.get_neighbors(current):
-            new_distance = current_distance + 1
+            new_distance = current_distance + neighbor.weight
             if new_distance < neighbor.distance:
                 neighbor.distance = new_distance
                 neighbor.came_from = current

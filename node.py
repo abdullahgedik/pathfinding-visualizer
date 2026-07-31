@@ -12,6 +12,8 @@ class Node:
         self.visited = False
         self.came_from = None
         self.distance = float("inf")
+        self.weight = 1
+        self.on_path = False
 
     def draw(self, window):
         colors = {
@@ -19,9 +21,13 @@ class Node:
             "wall": (0, 0, 0),
             "start": (255, 165, 0),
             "end": (64, 224, 208),
-            "path": (255, 255, 0),
+            "weight": (139, 69, 19),
         }
-        if self.state == "empty" and self.visited:
+        if self.state in ("start", "end"):
+            color = colors[self.state]
+        elif self.on_path:
+            color = (255, 255, 0)
+        elif self.state == "empty" and self.visited:
             color = (175, 216, 248)
         else:
             color = colors[self.state]

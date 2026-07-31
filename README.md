@@ -25,5 +25,9 @@ venv\Scripts\python main.py
 - [x] Dijkstra
 - [x] A*
 - [x] Speed control
-- [ ] Maze generation
-- [ ] Weighted terrain
+- [x] Maze generation
+- [x] Weighted terrain
+- [x] Greedy Best-First Search
+- [x] DFS
+- [x] Diagonal movement toggle
+- [x] Stats readout (nodes explored, path length)
