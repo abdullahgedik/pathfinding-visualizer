@@ -8,6 +8,8 @@ class Grid:
         self.cols = cols
         self.cell_size = cell_size
         self.nodes = self.make_nodes()
+        self.start = None
+        self.end = None
 
     def make_nodes(self):
         nodes = []
@@ -34,3 +36,46 @@ class Grid:
         for col in range(self.cols):
             x = col * self.cell_size
             pygame.draw.line(window, gray, (x, 0), (x, height))
+
+    def get_node_from_pos(self, pos):
+        x, y = pos
+        row = y // self.cell_size
+        col = x // self.cell_size
+        row = max(0, min(row, self.rows - 1))
+        col = max(0, min(col, self.cols - 1))
+        return self.nodes[row][col]
+
+    def handle_left_click(self, node):
+        if self.start is None and node is not self.end:
+            self.start = node
+            node.state = "start"
+        elif self.end is None and node is not self.start:
+            self.end = node
+            node.state = "end"
+        elif node is not self.start and node is not self.end:
+            node.state = "wall"
+
+    def handle_right_click(self, node):
+        if node is self.start:
+            self.start = None
+        elif node is self.end:
+            self.end = None
+        node.state = "empty"
+
+    def get_neighbors(self, node):
+        neighbors = []
+        deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        for d_row, d_col in deltas:
+            new_row = node.row + d_row
+            new_col = node.col + d_col
+            if 0 <= new_row < self.rows and 0 <= new_col < self.cols:
+                neighbor = self.nodes[new_row][new_col]
+                if neighbor.state != "wall":
+                    neighbors.append(neighbor)
+        return neighbors
+
+    def reconstruct_path(self, end):
+        current = end.came_from
+        while current is not None and current is not self.start:
+            current.state = "path"
+            current = current.came_from

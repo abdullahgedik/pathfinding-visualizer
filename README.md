@@ -19,9 +19,9 @@ venv\Scripts\python main.py
 ## Status
 
 - [x] Grid + Node class
-- [ ] Mouse input (walls, start/end)
-- [ ] BFS with step-by-step visualization
-- [ ] Path reconstruction/highlighting
+- [x] Mouse input (walls, start/end)
+- [x] BFS with step-by-step visualization
+- [x] Path reconstruction/highlighting
 - [ ] Dijkstra
 - [ ] A*
 - [ ] Speed control

@@ -18,6 +18,10 @@ class Node:
             "wall": (0, 0, 0),
             "start": (255, 165, 0),
             "end": (64, 224, 208),
+            "path": (255, 255, 0),
         }
-        color = colors[self.state]
+        if self.state == "empty" and self.visited:
+            color = (175, 216, 248)
+        else:
+            color = colors[self.state]
         pygame.draw.rect(window, color, (self.x, self.y, self.size, self.size))
