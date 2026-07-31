@@ -1,3 +1,6 @@
+# User-saved grid layouts
+saved_layout.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

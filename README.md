@@ -38,6 +38,15 @@ pip install -r requirements.txt
 venv\Scripts\python main.py
 ```
 
+## Testing
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+Tests cover the grid helpers and all 5 algorithms (path found on an open grid, no path reported when blocked, and Dijkstra correctly routing around costly terrain) — no display window required, since the algorithms never touch rendering.
+
 ## Tech Stack
 
 - Python 3

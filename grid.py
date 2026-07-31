@@ -1,7 +1,11 @@
+import json
 from node import Node
 import pygame
 
-WEIGHT_COST = 5
+TERRAIN_COSTS = {
+    "light": 3,
+    "heavy": 8,
+}
 
 
 class Grid:
@@ -56,9 +60,9 @@ class Grid:
             self.end = node
             node.state = "end"
         elif node is not self.start and node is not self.end:
-            if paint_mode == "weight":
-                node.state = "weight"
-                node.weight = WEIGHT_COST
+            if paint_mode in TERRAIN_COSTS:
+                node.state = paint_mode
+                node.weight = TERRAIN_COSTS[paint_mode]
             else:
                 node.state = "wall"
 
@@ -132,3 +136,43 @@ class Grid:
                 node.came_from = None
                 node.distance = float("inf")
                 node.on_path = False
+
+    def to_dict(self):
+        return {
+            "rows": self.rows,
+            "cols": self.cols,
+            "cell_size": self.cell_size,
+            "diagonal_enabled": self.diagonal_enabled,
+            "cells": [
+                [{"state": node.state, "weight": node.weight} for node in row]
+                for row in self.nodes
+            ],
+        }
+
+    def load_from_dict(self, data):
+        if data["rows"] != self.rows or data["cols"] != self.cols:
+            raise ValueError("Saved layout size does not match the current grid size")
+
+        self.nodes = self.make_nodes()
+        self.start = None
+        self.end = None
+        self.diagonal_enabled = data.get("diagonal_enabled", False)
+
+        for row_index, row in enumerate(data["cells"]):
+            for col_index, cell in enumerate(row):
+                node = self.nodes[row_index][col_index]
+                node.state = cell["state"]
+                node.weight = cell["weight"]
+                if node.state == "start":
+                    self.start = node
+                elif node.state == "end":
+                    self.end = node
+
+    def save_to_file(self, path):
+        with open(path, "w") as f:
+            json.dump(self.to_dict(), f)
+
+    def load_from_file(self, path):
+        with open(path) as f:
+            data = json.load(f)
+        self.load_from_dict(data)

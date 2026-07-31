@@ -21,7 +21,8 @@ class Node:
             "wall": (0, 0, 0),
             "start": (255, 165, 0),
             "end": (64, 224, 208),
-            "weight": (139, 69, 19),
+            "light": (222, 184, 135),
+            "heavy": (101, 67, 33),
         }
         if self.state in ("start", "end"):
             color = colors[self.state]
