@@ -201,6 +201,12 @@ def main():
                 pos = pygame.mouse.get_pos()
                 if pos[0] < GRID_WIDTH and TOP_BAR_HEIGHT <= pos[1] < TOP_BAR_HEIGHT + GRID_HEIGHT:
                     node = grid.get_node_from_pos((pos[0], pos[1] - TOP_BAR_HEIGHT))
+                    if event.button in (1, 3) and is_search_run:
+                        # Editing invalidates the current search, so drop it and its results
+                        grid.reset()
+                        algorithm = None
+                        is_search_run = False
+                        stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
                     if event.button == 1:
                         left_held = True
                         grid.handle_left_click(node, paint_mode)
@@ -287,8 +293,6 @@ def main():
                         diagonal_button.set_text("Diagonal: Off")
                 elif event.ui_element is maze_button:
                     algorithm = generate_maze(grid)
-                    grid.start = None
-                    grid.end = None
                     step_accumulator = 0.0
                     is_search_run = False
                     stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
@@ -301,14 +305,21 @@ def main():
                     algorithm = None
                     stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
                 elif event.ui_element is save_button:
-                    grid.save_to_file(SAVE_FILE)
+                    try:
+                        grid.save_to_file(SAVE_FILE)
+                    except OSError as error:
+                        print(f"Could not save layout: {error}")
                 elif event.ui_element is load_button:
                     try:
                         grid.load_from_file(SAVE_FILE)
                         algorithm = None
                         is_search_run = False
                         stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
-                    except (FileNotFoundError, ValueError) as error:
+                        if grid.diagonal_enabled:
+                            diagonal_button.set_text("Diagonal: On")
+                        else:
+                            diagonal_button.set_text("Diagonal: Off")
+                    except (OSError, ValueError) as error:
                         print(f"Could not load layout: {error}")
                 elif event.ui_element is compare_button and grid.start and grid.end:
                     half_cell_size = max(1, (GRID_WIDTH // 2) // COLS)

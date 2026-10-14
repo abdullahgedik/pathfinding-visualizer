@@ -2,10 +2,10 @@ import random
 
 
 def generate_maze(grid):
+    grid.clear()
     for row in grid.nodes:
         for node in row:
             node.state = "wall"
-            node.visited = False
 
     start_cell = grid.nodes[0][0]
     start_cell.state = "empty"

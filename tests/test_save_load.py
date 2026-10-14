@@ -49,3 +49,24 @@ def test_grids_cloned_via_dict_are_independent():
 
     assert clone_a.nodes[2][2] is not clone_b.nodes[2][2]
     assert clone_b.nodes[2][2].visited is False
+
+
+@pytest.mark.parametrize(
+    "contents",
+    [
+        "not json at all",
+        '{"rows": 5, "cols": 5}',
+        '{"rows": 5, "cols": 5, "cells": [[{"state": "lava", "weight": 1}]]}',
+        "[1, 2, 3]",
+    ],
+)
+def test_load_rejects_malformed_files_without_touching_the_grid(tmp_path, contents):
+    grid = Grid(5, 5, 20)
+    grid.handle_left_click(grid.nodes[0][0])
+    path = tmp_path / "layout.json"
+    path.write_text(contents)
+
+    with pytest.raises(ValueError):
+        grid.load_from_file(path)
+
+    assert grid.start is grid.nodes[0][0]

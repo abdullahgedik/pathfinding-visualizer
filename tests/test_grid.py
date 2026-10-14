@@ -96,3 +96,29 @@ def test_handle_right_click_erases_and_clears_start():
 
     assert grid.start is None
     assert node.state == "empty"
+
+
+def test_start_and_end_placed_on_terrain_reset_to_normal_cost():
+    grid = make_grid()
+    start_node, end_node = grid.nodes[0][0], grid.nodes[0][1]
+    start_node.state, start_node.weight = "heavy", 8
+    end_node.state, end_node.weight = "light", 3
+
+    grid.handle_left_click(start_node)
+    grid.handle_left_click(end_node)
+
+    assert start_node.weight == 1
+    assert end_node.weight == 1
+
+
+def test_painting_over_a_path_cell_clears_its_highlight():
+    grid = make_grid()
+    grid.handle_left_click(grid.nodes[0][0])
+    grid.handle_left_click(grid.nodes[0][4])
+    node = grid.nodes[2][2]
+    node.on_path = True
+
+    grid.handle_left_click(node)
+
+    assert node.state == "wall"
+    assert node.on_path is False

@@ -7,6 +7,8 @@ TERRAIN_COSTS = {
     "heavy": 8,
 }
 
+CELL_STATES = {"empty", "wall", "start", "end", "light", "heavy"}
+
 
 class Grid:
     def __init__(self, row, cols, cell_size):
@@ -56,15 +58,21 @@ class Grid:
         if self.start is None and node is not self.end:
             self.start = node
             node.state = "start"
+            node.weight = 1
         elif self.end is None and node is not self.start:
             self.end = node
             node.state = "end"
+            node.weight = 1
         elif node is not self.start and node is not self.end:
             if paint_mode in TERRAIN_COSTS:
                 node.state = paint_mode
                 node.weight = TERRAIN_COSTS[paint_mode]
             else:
                 node.state = "wall"
+                node.weight = 1
+        else:
+            return
+        node.on_path = False
 
     def handle_right_click(self, node):
         if node is self.start:
@@ -73,6 +81,7 @@ class Grid:
             self.end = None
         node.state = "empty"
         node.weight = 1
+        node.on_path = False
 
     def get_line_nodes(self, start_node, end_node):
         r0, c0 = start_node.row, start_node.col
@@ -150,23 +159,32 @@ class Grid:
         }
 
     def load_from_dict(self, data):
-        if data["rows"] != self.rows or data["cols"] != self.cols:
-            raise ValueError("Saved layout size does not match the current grid size")
+        try:
+            if data["rows"] != self.rows or data["cols"] != self.cols:
+                raise ValueError("Saved layout size does not match the current grid size")
 
-        self.nodes = self.make_nodes()
-        self.start = None
-        self.end = None
+            # Build into fresh nodes so a malformed file leaves the current grid untouched
+            nodes = self.make_nodes()
+            start = None
+            end = None
+            for row_index, row in enumerate(data["cells"]):
+                for col_index, cell in enumerate(row):
+                    node = nodes[row_index][col_index]
+                    if cell["state"] not in CELL_STATES:
+                        raise ValueError(f"Unknown cell state: {cell['state']}")
+                    node.state = cell["state"]
+                    node.weight = cell["weight"]
+                    if node.state == "start":
+                        start = node
+                    elif node.state == "end":
+                        end = node
+        except (KeyError, TypeError, IndexError) as error:
+            raise ValueError("Saved layout file is malformed") from error
+
+        self.nodes = nodes
+        self.start = start
+        self.end = end
         self.diagonal_enabled = data.get("diagonal_enabled", False)
-
-        for row_index, row in enumerate(data["cells"]):
-            for col_index, cell in enumerate(row):
-                node = self.nodes[row_index][col_index]
-                node.state = cell["state"]
-                node.weight = cell["weight"]
-                if node.state == "start":
-                    self.start = node
-                elif node.state == "end":
-                    self.end = node
 
     def save_to_file(self, path):
         with open(path, "w") as f:
