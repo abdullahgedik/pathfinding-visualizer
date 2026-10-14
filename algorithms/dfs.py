@@ -1,9 +1,16 @@
 def dfs(grid):
-    stack = [grid.start]
-    grid.start.visited = True
+    # Nodes are marked visited when popped, not when pushed, so the search
+    # really dives down one branch before backtracking
+    stack = [(grid.start, None)]
 
     while stack:
-        current = stack.pop()
+        current, parent = stack.pop()
+
+        if current.visited:
+            continue
+
+        current.visited = True
+        current.came_from = parent
 
         if current is grid.end:
             grid.reconstruct_path(current)
@@ -11,8 +18,6 @@ def dfs(grid):
 
         for neighbor in grid.get_neighbors(current):
             if not neighbor.visited:
-                neighbor.visited = True
-                neighbor.came_from = current
-                stack.append(neighbor)
+                stack.append((neighbor, current))
 
         yield

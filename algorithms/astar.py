@@ -1,4 +1,5 @@
 import heapq
+import math
 from itertools import count
 
 
@@ -6,7 +7,8 @@ def heuristic(node, end, diagonal=False):
     d_row = abs(node.row - end.row)
     d_col = abs(node.col - end.col)
     if diagonal:
-        return max(d_row, d_col)
+        # Octile distance: diagonal steps cost sqrt(2), straight steps cost 1
+        return max(d_row, d_col) + (math.sqrt(2) - 1) * min(d_row, d_col)
     return d_row + d_col
 
 
@@ -29,7 +31,7 @@ def astar(grid):
             return
 
         for neighbor in grid.get_neighbors(current):
-            new_distance = current.distance + neighbor.weight
+            new_distance = current.distance + grid.move_cost(current, neighbor)
             if new_distance < neighbor.distance:
                 neighbor.distance = new_distance
                 neighbor.came_from = current

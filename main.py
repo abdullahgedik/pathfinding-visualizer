@@ -33,7 +33,7 @@ def compute_stats_text(grid):
     path = grid.get_path()
     if path:
         cost = grid.path_cost(path)
-        return f"Visited: {visited_count}   Path: {len(path)}   Cost: {cost:g}"
+        return f"Visited: {visited_count}   Path: {len(path)}   Cost: {round(cost, 1):g}"
     return f"Visited: {visited_count}   No path found"
 
 

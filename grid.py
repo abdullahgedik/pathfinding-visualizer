@@ -1,4 +1,5 @@
 import json
+import math
 from node import Node
 import pygame
 
@@ -8,6 +9,8 @@ TERRAIN_COSTS = {
 }
 
 CELL_STATES = {"empty", "wall", "start", "end", "light", "heavy"}
+
+DIAGONAL_STEP = math.sqrt(2)
 
 
 class Grid:
@@ -108,9 +111,21 @@ class Grid:
             new_col = node.col + d_col
             if 0 <= new_row < self.rows and 0 <= new_col < self.cols:
                 neighbor = self.nodes[new_row][new_col]
-                if neighbor.state != "wall":
-                    neighbors.append(neighbor)
+                if neighbor.state == "wall":
+                    continue
+                if d_row and d_col and (
+                    self.nodes[new_row][node.col].state == "wall"
+                    or self.nodes[node.row][new_col].state == "wall"
+                ):
+                    # No cutting diagonally past the corner of a wall
+                    continue
+                neighbors.append(neighbor)
         return neighbors
+
+    def move_cost(self, from_node, to_node):
+        is_diagonal = from_node.row != to_node.row and from_node.col != to_node.col
+        step = DIAGONAL_STEP if is_diagonal else 1
+        return to_node.weight * step
 
     def get_maze_neighbors(self, node):
         neighbors = []
@@ -145,7 +160,10 @@ class Grid:
         return path
 
     def path_cost(self, path):
-        return sum(node.weight for node in path[1:])
+        return sum(
+            self.move_cost(from_node, to_node)
+            for from_node, to_node in zip(path, path[1:])
+        )
 
     def clear(self):
         self.nodes = self.make_nodes()

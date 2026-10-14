@@ -1,5 +1,6 @@
+import random
 import pytest
-from grid import Grid
+from grid import Grid, TERRAIN_COSTS
 from algorithms.bfs import bfs
 from algorithms.dijkstra import dijkstra
 from algorithms.astar import astar
@@ -67,3 +68,65 @@ def test_dijkstra_routes_around_expensive_terrain():
 
     path_nodes = [node for row in grid.nodes for node in row if node.on_path]
     assert all(node.weight == 1 for node in path_nodes)
+
+
+@pytest.mark.parametrize("algorithm", ALGORITHMS)
+@pytest.mark.parametrize("diagonal", [False, True])
+def test_path_is_a_chain_of_legal_moves(algorithm, diagonal):
+    grid = make_open_grid()
+    grid.diagonal_enabled = diagonal
+    grid.nodes[1][1].state = "wall"
+    grid.nodes[3][2].state = "wall"
+
+    run_to_completion(algorithm(grid))
+
+    path = grid.get_path()
+    assert path[0] is grid.start and path[-1] is grid.end
+    for from_node, to_node in zip(path, path[1:]):
+        assert to_node in grid.get_neighbors(from_node)
+
+
+def test_dijkstra_uses_diagonal_cost_on_an_open_grid():
+    grid = make_open_grid()
+    grid.diagonal_enabled = True
+
+    run_to_completion(dijkstra(grid))
+
+    path = grid.get_path()
+    assert len(path) == 5
+    assert grid.path_cost(path) == pytest.approx(4 * 2 ** 0.5)
+
+
+@pytest.mark.parametrize("seed", range(20))
+@pytest.mark.parametrize("diagonal", [False, True])
+def test_astar_finds_the_same_cost_as_dijkstra(seed, diagonal):
+    rng = random.Random(seed)
+    layout = []
+    for _ in range(12):
+        layout.append([rng.choice(["empty"] * 5 + ["wall", "light", "heavy"]) for _ in range(12)])
+
+    def build():
+        grid = Grid(12, 12, 20)
+        grid.diagonal_enabled = diagonal
+        for row in range(12):
+            for col in range(12):
+                state = layout[row][col]
+                grid.nodes[row][col].state = state
+                grid.nodes[row][col].weight = TERRAIN_COSTS.get(state, 1)
+        grid.start, grid.end = grid.nodes[0][0], grid.nodes[11][11]
+        for node in (grid.start, grid.end):
+            node.state, node.weight = "start" if node is grid.start else "end", 1
+        return grid
+
+    dijkstra_grid = build()
+    run_to_completion(dijkstra(dijkstra_grid))
+    astar_grid = build()
+    run_to_completion(astar(astar_grid))
+
+    dijkstra_path = dijkstra_grid.get_path()
+    astar_path = astar_grid.get_path()
+    assert bool(dijkstra_path) == bool(astar_path)
+    if dijkstra_path:
+        assert astar_grid.path_cost(astar_path) == pytest.approx(
+            dijkstra_grid.path_cost(dijkstra_path)
+        )

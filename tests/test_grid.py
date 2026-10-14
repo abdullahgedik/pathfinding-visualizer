@@ -1,3 +1,4 @@
+import pytest
 from grid import Grid
 
 
@@ -145,3 +146,29 @@ def test_get_path_and_cost_follow_the_came_from_chain():
 
     assert path == [grid.start, middle, grid.end]
     assert grid.path_cost(path) == 8 + 1
+
+
+def test_diagonal_moves_cannot_cut_past_a_wall_corner():
+    grid = make_grid()
+    grid.diagonal_enabled = True
+    center = grid.nodes[2][2]
+    grid.nodes[1][2].state = "wall"
+
+    neighbors = grid.get_neighbors(center)
+
+    assert grid.nodes[1][1] not in neighbors
+    assert grid.nodes[1][3] not in neighbors
+    assert grid.nodes[3][1] in neighbors
+    assert grid.nodes[3][3] in neighbors
+    assert len(neighbors) == 5
+
+
+def test_diagonal_steps_cost_more_than_straight_steps():
+    grid = make_grid()
+    origin = grid.nodes[2][2]
+
+    straight = grid.move_cost(origin, grid.nodes[2][3])
+    diagonal = grid.move_cost(origin, grid.nodes[3][3])
+
+    assert straight == 1
+    assert diagonal == pytest.approx(2 ** 0.5)
