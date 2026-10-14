@@ -10,6 +10,8 @@ from algorithms.dfs import dfs
 from algorithms.maze import generate_maze
 
 SAVE_FILE = "saved_layout.json"
+IDLE_STATS = "Visited: 0   No path yet"
+STATUS_DURATION_MS = 2500
 
 ALGORITHMS = {
     "BFS": bfs,
@@ -28,11 +30,10 @@ def s(value):
 
 def compute_stats_text(grid):
     visited_count = sum(1 for row in grid.nodes for node in row if node.visited)
-    if grid.end.came_from is not None:
-        path_length = (
-            sum(1 for row in grid.nodes for node in row if node.on_path) + 2
-        )
-        return f"Visited: {visited_count}   Path length: {path_length}"
+    path = grid.get_path()
+    if path:
+        cost = grid.path_cost(path)
+        return f"Visited: {visited_count}   Path: {len(path)}   Cost: {cost:g}"
     return f"Visited: {visited_count}   No path found"
 
 
@@ -71,7 +72,13 @@ def main():
     speed_font = pygame.font.SysFont("segoeui", s(22), bold=True)
     speed_text = speed_font.render("Speed", True, (0, 0, 0))
     stats_font = pygame.font.SysFont("segoeui", s(17), bold=True)
-    stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
+
+    def render_text(text):
+        return stats_font.render(text, True, (0, 0, 0))
+
+    stats_text = render_text(IDLE_STATS)
+    status_text = None
+    status_until = 0
     speed_slider = pygame_gui.elements.UIHorizontalSlider(
         relative_rect=pygame.Rect((s(80), s(15)), (s(280), s(30))),
         start_value=30,
@@ -114,31 +121,16 @@ def main():
 
     # Bottom bar: run an algorithm, or reset/clear/save/load the layout
     bottom_bar_y = TOP_BAR_HEIGHT + GRID_HEIGHT
-    bfs_button = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect((s(10), bottom_bar_y + s(10)), (s(95), s(30))),
-        text="BFS",
-        manager=manager,
-    )
-    dijkstra_button = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect((s(113), bottom_bar_y + s(10)), (s(95), s(30))),
-        text="Dijkstra",
-        manager=manager,
-    )
-    astar_button = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect((s(216), bottom_bar_y + s(10)), (s(95), s(30))),
-        text="A*",
-        manager=manager,
-    )
-    greedy_button = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect((s(319), bottom_bar_y + s(10)), (s(95), s(30))),
-        text="Greedy",
-        manager=manager,
-    )
-    dfs_button = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect((s(422), bottom_bar_y + s(10)), (s(95), s(30))),
-        text="DFS",
-        manager=manager,
-    )
+    algorithm_buttons = {}
+    for index, name in enumerate(algorithm_names):
+        algorithm_buttons[name] = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect(
+                (s(10 + index * 88), bottom_bar_y + s(10)), (s(80), s(30))
+            ),
+            text=name,
+            manager=manager,
+        )
+    last_algorithm_button = algorithm_buttons[algorithm_names[-1]]
     action_button_width = s(85)
     action_button_gap = s(8)
     action_margin_right = s(15)
@@ -206,7 +198,7 @@ def main():
                         grid.reset()
                         algorithm = None
                         is_search_run = False
-                        stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
+                        stats_text = render_text(IDLE_STATS)
                     if event.button == 1:
                         left_held = True
                         grid.handle_left_click(node, paint_mode)
@@ -241,40 +233,24 @@ def main():
                 elif event.ui_element is right_dropdown:
                     right_choice = event.text
             elif event.type == pygame_gui.UI_BUTTON_PRESSED:
+                pressed_algorithm = next(
+                    (
+                        name
+                        for name, button in algorithm_buttons.items()
+                        if button is event.ui_element
+                    ),
+                    None,
+                )
                 if compare_mode:
                     if event.ui_element is compare_button:
                         compare_mode = False
                         compare_button.set_text("Compare")
-                elif event.ui_element is bfs_button and grid.start and grid.end:
+                elif pressed_algorithm and grid.start and grid.end:
                     grid.reset()
-                    algorithm = bfs(grid)
+                    algorithm = ALGORITHMS[pressed_algorithm](grid)
                     step_accumulator = 0.0
                     is_search_run = True
-                    stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
-                elif event.ui_element is dijkstra_button and grid.start and grid.end:
-                    grid.reset()
-                    algorithm = dijkstra(grid)
-                    step_accumulator = 0.0
-                    is_search_run = True
-                    stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
-                elif event.ui_element is astar_button and grid.start and grid.end:
-                    grid.reset()
-                    algorithm = astar(grid)
-                    step_accumulator = 0.0
-                    is_search_run = True
-                    stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
-                elif event.ui_element is greedy_button and grid.start and grid.end:
-                    grid.reset()
-                    algorithm = greedy(grid)
-                    step_accumulator = 0.0
-                    is_search_run = True
-                    stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
-                elif event.ui_element is dfs_button and grid.start and grid.end:
-                    grid.reset()
-                    algorithm = dfs(grid)
-                    step_accumulator = 0.0
-                    is_search_run = True
-                    stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
+                    stats_text = render_text(IDLE_STATS)
                 elif event.ui_element is mode_button:
                     if paint_mode == "wall":
                         paint_mode = "light"
@@ -295,32 +271,38 @@ def main():
                     algorithm = generate_maze(grid)
                     step_accumulator = 0.0
                     is_search_run = False
-                    stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
+                    stats_text = render_text(IDLE_STATS)
                 elif event.ui_element is reset_button:
                     grid.reset()
                     algorithm = None
-                    stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
+                    stats_text = render_text(IDLE_STATS)
                 elif event.ui_element is clear_button:
                     grid.clear()
                     algorithm = None
-                    stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
+                    stats_text = render_text(IDLE_STATS)
                 elif event.ui_element is save_button:
                     try:
                         grid.save_to_file(SAVE_FILE)
-                    except OSError as error:
-                        print(f"Could not save layout: {error}")
+                        status_text = render_text("Layout saved")
+                    except OSError:
+                        status_text = render_text("Could not save layout")
+                    status_until = pygame.time.get_ticks() + STATUS_DURATION_MS
                 elif event.ui_element is load_button:
                     try:
                         grid.load_from_file(SAVE_FILE)
                         algorithm = None
                         is_search_run = False
-                        stats_text = stats_font.render("Visited: 0   No path yet", True, (0, 0, 0))
+                        stats_text = render_text(IDLE_STATS)
+                        status_text = render_text("Layout loaded")
                         if grid.diagonal_enabled:
                             diagonal_button.set_text("Diagonal: On")
                         else:
                             diagonal_button.set_text("Diagonal: Off")
-                    except (OSError, ValueError) as error:
-                        print(f"Could not load layout: {error}")
+                    except FileNotFoundError:
+                        status_text = render_text("No saved layout yet")
+                    except (OSError, ValueError):
+                        status_text = render_text("Saved layout is invalid")
+                    status_until = pygame.time.get_ticks() + STATUS_DURATION_MS
                 elif event.ui_element is compare_button and grid.start and grid.end:
                     half_cell_size = max(1, (GRID_WIDTH // 2) // COLS)
                     layout = grid.to_dict()
@@ -349,17 +331,13 @@ def main():
                         next(algorithm_left)
                     except StopIteration:
                         algorithm_left = None
-                        stats_left_text = stats_font.render(
-                            compute_stats_text(grid_left), True, (0, 0, 0)
-                        )
+                        stats_left_text = render_text(compute_stats_text(grid_left))
                 if algorithm_right is not None:
                     try:
                         next(algorithm_right)
                     except StopIteration:
                         algorithm_right = None
-                        stats_right_text = stats_font.render(
-                            compute_stats_text(grid_right), True, (0, 0, 0)
-                        )
+                        stats_right_text = render_text(compute_stats_text(grid_right))
                 if algorithm_left is None and algorithm_right is None:
                     step_accumulator = 0.0
                     break
@@ -374,9 +352,7 @@ def main():
                     algorithm = None
                     step_accumulator = 0.0
                     if is_search_run:
-                        stats_text = stats_font.render(
-                            compute_stats_text(grid), True, (0, 0, 0)
-                        )
+                        stats_text = render_text(compute_stats_text(grid))
                     break
 
         manager.update(time_delta)
@@ -398,12 +374,8 @@ def main():
                 window, (half_width, TOP_BAR_HEIGHT, half_width, mini_grid_height)
             )
 
-            left_display = stats_left_text or stats_font.render(
-                f"{left_choice} (running)", True, (0, 0, 0)
-            )
-            right_display = stats_right_text or stats_font.render(
-                f"{right_choice} (running)", True, (0, 0, 0)
-            )
+            left_display = stats_left_text or render_text(f"{left_choice} (running)")
+            right_display = stats_right_text or render_text(f"{right_choice} (running)")
             label_y = TOP_BAR_HEIGHT + mini_grid_height + s(10)
             window.blit(left_display, (s(10), label_y))
             window.blit(right_display, (half_width + s(10), label_y))
@@ -414,12 +386,12 @@ def main():
             grid.draw(grid_surface)
             draw_outline(window, (0, TOP_BAR_HEIGHT, GRID_WIDTH, GRID_HEIGHT))
 
-        stats_separator_x = dfs_button.rect.right + s(15)
+        stats_separator_x = last_algorithm_button.rect.right + s(15)
         pygame.draw.line(
             window,
             (150, 150, 150),
-            (stats_separator_x, dfs_button.rect.top),
-            (stats_separator_x, dfs_button.rect.bottom),
+            (stats_separator_x, last_algorithm_button.rect.top),
+            (stats_separator_x, last_algorithm_button.rect.bottom),
             2,
         )
         actions_separator_x = reset_button.rect.left - s(15)
@@ -440,7 +412,11 @@ def main():
         )
 
         window.blit(speed_text, (s(10), s(12)))
-        window.blit(stats_text, (dfs_button.rect.right + s(30), bottom_bar_y + s(12)))
+        if status_text is not None and pygame.time.get_ticks() < status_until:
+            bottom_text = status_text
+        else:
+            bottom_text = stats_text
+        window.blit(bottom_text, (last_algorithm_button.rect.right + s(30), bottom_bar_y + s(12)))
         manager.draw_ui(window)
         pygame.display.update()
 

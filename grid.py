@@ -133,6 +133,20 @@ class Grid:
             current.on_path = True
             current = current.came_from
 
+    def get_path(self):
+        if self.end is None or self.end.came_from is None:
+            return []
+        path = []
+        current = self.end
+        while current is not None:
+            path.append(current)
+            current = current.came_from
+        path.reverse()
+        return path
+
+    def path_cost(self, path):
+        return sum(node.weight for node in path[1:])
+
     def clear(self):
         self.nodes = self.make_nodes()
         self.start = None

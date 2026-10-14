@@ -122,3 +122,26 @@ def test_painting_over_a_path_cell_clears_its_highlight():
 
     assert node.state == "wall"
     assert node.on_path is False
+
+
+def test_get_path_is_empty_before_a_search():
+    grid = make_grid()
+    grid.handle_left_click(grid.nodes[0][0])
+    grid.handle_left_click(grid.nodes[0][4])
+
+    assert grid.get_path() == []
+
+
+def test_get_path_and_cost_follow_the_came_from_chain():
+    grid = make_grid()
+    grid.handle_left_click(grid.nodes[0][0])
+    grid.handle_left_click(grid.nodes[0][2])
+    middle = grid.nodes[0][1]
+    middle.state, middle.weight = "heavy", 8
+    middle.came_from = grid.start
+    grid.end.came_from = middle
+
+    path = grid.get_path()
+
+    assert path == [grid.start, middle, grid.end]
+    assert grid.path_cost(path) == 8 + 1
